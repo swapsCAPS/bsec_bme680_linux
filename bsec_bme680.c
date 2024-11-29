@@ -33,8 +33,8 @@
 
 int g_i2cFid; // I2C Linux device handle
 int i2c_address = BME680_I2C_ADDR_PRIMARY;
-char *filename_state = "bsec_iaq.state";
-char *filename_config = "bsec_iaq.config";
+char *filename_state = getenv("BSEC_STATE");
+char *filename_config = getenv("BSEC_CONFIG");
 
 /* functions */
 
