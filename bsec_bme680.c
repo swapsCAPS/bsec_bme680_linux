@@ -33,8 +33,6 @@
 
 int g_i2cFid; // I2C Linux device handle
 int i2c_address = BME680_I2C_ADDR_PRIMARY;
-char *filename_state = getenv("BSEC_STATE");
-char *filename_config = getenv("BSEC_CONFIG");
 
 /* functions */
 
@@ -272,7 +270,7 @@ uint32_t binary_load(uint8_t *b_buffer, uint32_t n_buffer, char *filename,
 uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 {
   int32_t rslt = 0;
-  rslt = binary_load(state_buffer, n_buffer, filename_state, 0);
+  rslt = binary_load(state_buffer, n_buffer, getenv("BSEC_STATE"), 0);
   return rslt;
 }
 
@@ -287,7 +285,7 @@ uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
 void state_save(const uint8_t *state_buffer, uint32_t length)
 {
   FILE *state_w_ptr;
-  state_w_ptr = fopen(filename_state,"wb");
+  state_w_ptr = fopen(getenv("BSEC_STATE"),"wb");
   fwrite(state_buffer,length,1,state_w_ptr);
   fclose(state_w_ptr);
 }
@@ -308,7 +306,7 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
    * Apparently skipping the first 4 bytes works fine.
    *
    */
-  rslt = binary_load(config_buffer, n_buffer, filename_config, 4);
+  rslt = binary_load(config_buffer, n_buffer, getenv("BSEC_CONFIG"), 4);
   return rslt;
 }
 
