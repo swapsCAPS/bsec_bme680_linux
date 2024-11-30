@@ -13,9 +13,6 @@
 /* header files */
 
 #include "bsec_integration.h"
-#include "microhttpd.h"
-#include "prom.h"
-#include "promhttp.h"
 #include <fcntl.h>
 #include <inttypes.h>
 #include <linux/i2c-dev.h>
@@ -34,6 +31,9 @@
 #define DESTZONE "TZ=Europe/Berlin"
 #define temp_offset (5.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
+
+char *filename_state = "bsec_iaq.state";
+char *filename_config = "bsec_iaq.config";
 
 int g_i2cFid; // I2C Linux device handle
 int i2c_address = BME680_I2C_ADDR_PRIMARY;
@@ -197,11 +197,8 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
          pressure / 100);
   printf(",[G Ohms]: %.0f", gas);
   printf(",[S]: %d", bsec_status);
-  // printf(",[static IAQ]: %.2f", static_iaq);
   printf(",[eCO2 ppm]: %.15f", co2_equivalent);
   printf(",[bVOCe ppm]: %.25f", breath_voc_equivalent);
-  // printf(",%" PRId64, timestamp);
-  // printf(",%" PRId64, timestamp_ms);
   printf("\r\n");
   fflush(stdout);
 }
@@ -262,7 +259,7 @@ uint32_t binary_load(uint8_t *b_buffer, uint32_t n_buffer, char *filename,
  */
 uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer) {
   int32_t rslt = 0;
-  rslt = binary_load(state_buffer, n_buffer, getenv("BSEC_STATE"), 0);
+  rslt = binary_load(state_buffer, n_buffer, filename_state, 0);
   return rslt;
 }
 
@@ -276,7 +273,7 @@ uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer) {
  */
 void state_save(const uint8_t *state_buffer, uint32_t length) {
   FILE *state_w_ptr;
-  state_w_ptr = fopen(getenv("BSEC_STATE"), "wb");
+  state_w_ptr = fopen(filename_state, "wb");
   fwrite(state_buffer, length, 1, state_w_ptr);
   fclose(state_w_ptr);
 }
@@ -296,7 +293,7 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer) {
    * Apparently skipping the first 4 bytes works fine.
    *
    */
-  rslt = binary_load(config_buffer, n_buffer, getenv("BSEC_CONFIG"), 4);
+  rslt = binary_load(config_buffer, n_buffer, filename_config, 4);
   return rslt;
 }
 
@@ -325,32 +322,6 @@ int main(int argc, const char **argv) {
     /* Could not intialize BSEC library */
     return (int)ret.bsec_status;
   }
-
-  struct MHD_Daemon *daemon =
-      promhttp_start_daemon(MHD_USE_SELECT_INTERNALLY, 8000, NULL, NULL);
-  if (daemon == NULL) {
-    return 1;
-  }
-
-  int done = 0;
-
-  auto void intHandler(int signal);
-  void intHandler(int signal) {
-    printf("\nshutting down...\n");
-    fflush(stdout);
-    prom_collector_registry_destroy(PROM_COLLECTOR_REGISTRY_DEFAULT);
-    MHD_stop_daemon(daemon);
-    done = 1;
-  }
-
-  if (argc == 2) {
-    unsigned int timeout = atoi(argv[1]);
-    sleep(timeout);
-    intHandler(0);
-    return 0;
-  }
-
-  signal(SIGINT, intHandler);
 
   /* Call to endless loop function which reads and processes data based on
    * sensor settings.
