@@ -28,12 +28,10 @@
 
 /* definitions */
 
-#define DESTZONE "TZ=Europe/Berlin"
-#define temp_offset (5.0f)
 #define sample_rate_mode (BSEC_SAMPLE_RATE_LP)
 
-char *filename_state = "bsec_iaq.state";
-char *filename_config = "bsec_iaq.config";
+char *filename_state;
+char *filename_config;
 
 int g_i2cFid; // I2C Linux device handle
 int i2c_address = BME680_I2C_ADDR_PRIMARY;
@@ -179,26 +177,14 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float raw_temperature, float raw_humidity, float gas,
                   bsec_library_return_t bsec_status, float static_iaq,
                   float co2_equivalent, float breath_voc_equivalent) {
-  // int64_t timestamp_s = timestamp / 1000000000;
-  ////int64_t timestamp_ms = timestamp / 1000;
 
-  // time_t t = timestamp_s;
-  /*
-   * timestamp for localtime only makes sense if get_timestamp_us() uses
-   * CLOCK_REALTIME
-   */
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
+  // clang-format off
+  // "time,iaq_accuracy,iaq,temperature C,humidity %rH,pressure hPa,gas Ohms,bsec_status ,co2_equivalent ppm,breath_voc_equivalent ppm"
+  // clang-format on
 
-  printf("%d-%02d-%02d %02d:%02d:%02d,", tm.tm_year + 1900, tm.tm_mon + 1,
-         tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec); /* localtime */
-  printf("[IAQ (%d)]: %.2f", iaq_accuracy, iaq);
-  printf(",[T degC]: %.2f,[H %%rH]: %.2f,[P hPa]: %.2f", temperature, humidity,
-         pressure / 100);
-  printf(",[G Ohms]: %.0f", gas);
-  printf(",[S]: %d", bsec_status);
-  printf(",[eCO2 ppm]: %.15f", co2_equivalent);
-  printf(",[bVOCe ppm]: %.25f", breath_voc_equivalent);
+  printf("%ld,%d,%.2f,%.2f,%.2f,%.2f,%.0f,%d,%.15f,%.25f", time(NULL),
+         iaq_accuracy, iaq, temperature, humidity, pressure / 100, gas,
+         bsec_status, co2_equivalent, breath_voc_equivalent);
   printf("\r\n");
   fflush(stdout);
 }
@@ -297,7 +283,10 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer) {
   return rslt;
 }
 
-/* main */
+void sighandler(int signum) {
+  printf("Got signal %d", signum);
+  exit(1);
+}
 
 /*
  * Main function which configures BSEC library and then reads and processes
@@ -306,7 +295,11 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer) {
  * return      result of the processing
  */
 int main(int argc, const char **argv) {
-  putenv(DESTZONE); // Switch to destination time zone
+  signal(SIGINT, sighandler);
+  filename_state = getenv("FILENAME_STATE");
+  filename_config = getenv("FILENAME_CONFIG");
+
+  float temp_offset = strtof(getenv("TEMP_OFFSET"), NULL);
 
   i2cOpen();
   i2cSetAddress(i2c_address);
