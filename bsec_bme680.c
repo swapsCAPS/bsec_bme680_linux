@@ -182,7 +182,7 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   // "time,iaq_accuracy,iaq,temperature C,humidity %rH,pressure hPa,gas Ohms,bsec_status ,co2_equivalent ppm,breath_voc_equivalent ppm"
   // clang-format on
 
-  printf("%ld,%d,%.2f,%.2f,%.2f,%.2f,%.0f,%d,%.15f,%.25f", time(NULL),
+  printf("_data:%ld,%d,%.2f,%.2f,%.2f,%.2f,%.0f,%d,%.15f,%.25f", time(NULL),
          iaq_accuracy, iaq, temperature, humidity, pressure / 100, gas,
          bsec_status, co2_equivalent, breath_voc_equivalent);
   printf("\r\n");
@@ -207,7 +207,7 @@ uint32_t binary_load(uint8_t *b_buffer, uint32_t n_buffer, char *filename,
   struct stat fileinfo;
   rslt = stat(filename, &fileinfo);
   if (rslt != 0) {
-    fprintf(stderr, "stat'ing binary file %s: ", filename);
+    fprintf(stderr, "stat'ing binary file %s: got %d", filename, rslt);
     perror("");
     return 0;
   }
@@ -284,7 +284,7 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer) {
 }
 
 void sighandler(int signum) {
-  printf("Got signal %d", signum);
+  printf("Got signal %d, exiting", signum);
   exit(1);
 }
 
@@ -296,6 +296,7 @@ void sighandler(int signum) {
  */
 int main(int argc, const char **argv) {
   signal(SIGINT, sighandler);
+
   filename_state = getenv("FILENAME_STATE");
   filename_config = getenv("FILENAME_CONFIG");
 
