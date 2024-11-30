@@ -12,18 +12,22 @@
 
 /* header files */
 
+#include "bsec_integration.h"
+#include "microhttpd.h"
+#include "prom.h"
+#include "promhttp.h"
+#include <fcntl.h>
+#include <inttypes.h>
+#include <linux/i2c-dev.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <fcntl.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <linux/i2c-dev.h>
-#include "bsec_integration.h"
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
 /* definitions */
 
@@ -37,8 +41,7 @@ int i2c_address = BME680_I2C_ADDR_PRIMARY;
 /* functions */
 
 // open the Linux device
-void i2cOpen()
-{
+void i2cOpen() {
   g_i2cFid = open("/dev/i2c-1", O_RDWR);
   if (g_i2cFid < 0) {
     perror("i2cOpen");
@@ -47,14 +50,10 @@ void i2cOpen()
 }
 
 // close the Linux device
-void i2cClose()
-{
-  close(g_i2cFid);
-}
+void i2cClose() { close(g_i2cFid); }
 
 // set the I2C slave address for all subsequent I2C device transfers
-void i2cSetAddress(int address)
-{
+void i2cSetAddress(int address) {
   if (ioctl(g_i2cFid, I2C_SLAVE, address) < 0) {
     perror("i2cSetAddress");
     exit(1);
@@ -72,18 +71,17 @@ void i2cSetAddress(int address)
  * return          result of the bus communication function
  */
 int8_t bus_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data_ptr,
-                 uint16_t data_len)
-{
+                 uint16_t data_len) {
   int8_t rslt = 0; /* Return 0 for Success, non-zero for failure */
 
   uint8_t reg[16];
-  reg[0]=reg_addr;
+  reg[0] = reg_addr;
   int i;
 
-  for (i=1; i<data_len+1; i++)
-    reg[i] = reg_data_ptr[i-1];
+  for (i = 1; i < data_len + 1; i++)
+    reg[i] = reg_data_ptr[i - 1];
 
-  if (write(g_i2cFid, reg, data_len+1) != data_len+1) {
+  if (write(g_i2cFid, reg, data_len + 1) != data_len + 1) {
     perror("user_i2c_write");
     rslt = 1;
     exit(1);
@@ -104,12 +102,11 @@ int8_t bus_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data_ptr,
  * return          result of the bus communication function
  */
 int8_t bus_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data_ptr,
-                uint16_t data_len)
-{
+                uint16_t data_len) {
   int8_t rslt = 0; /* Return 0 for Success, non-zero for failure */
 
   uint8_t reg[1];
-  reg[0]=reg_addr;
+  reg[0] = reg_addr;
 
   if (write(g_i2cFid, reg, 1) != 1) {
     perror("user_i2c_read_reg");
@@ -131,8 +128,7 @@ int8_t bus_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *reg_data_ptr,
  *
  * return          none
  */
-void _sleep(uint32_t t_ms)
-{
+void _sleep(uint32_t t_ms) {
   struct timespec ts;
   ts.tv_sec = t_ms / 1000;
   /* mod because nsec must be in the range 0 to 999999999 */
@@ -145,15 +141,14 @@ void _sleep(uint32_t t_ms)
  *
  * return          system_current_time    system timestamp in microseconds
  */
-int64_t get_timestamp_us()
-{
+int64_t get_timestamp_us() {
   struct timespec spec;
-  //clock_gettime(CLOCK_REALTIME, &spec);
+  // clock_gettime(CLOCK_REALTIME, &spec);
   /* MONOTONIC in favor of REALTIME to avoid interference by time sync. */
   clock_gettime(CLOCK_MONOTONIC, &spec);
 
-  int64_t system_current_time_ns = (int64_t)(spec.tv_sec) * (int64_t)1000000000
-                                   + (int64_t)(spec.tv_nsec);
+  int64_t system_current_time_ns =
+      (int64_t)(spec.tv_sec) * (int64_t)1000000000 + (int64_t)(spec.tv_nsec);
   int64_t system_current_time_us = system_current_time_ns / 1000;
 
   return system_current_time_us;
@@ -174,21 +169,20 @@ int64_t get_timestamp_us()
  * param[in]       bsec_status     value returned by the bsec_do_steps() call
  * param[in]       static_iaq      unscaled indoor-air-quality estimate
  * param[in]       co2_equivalent  CO2 equivalent estimate [ppm]
- * param[in]       breath_voc_equivalent  breath VOC concentration estimate [ppm]
+ * param[in]       breath_voc_equivalent  breath VOC concentration estimate
+ * [ppm]
  *
  * return          none
  */
 void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
                   float temperature, float humidity, float pressure,
                   float raw_temperature, float raw_humidity, float gas,
-                  bsec_library_return_t bsec_status,
-                  float static_iaq, float co2_equivalent,
-                  float breath_voc_equivalent)
-{
-  //int64_t timestamp_s = timestamp / 1000000000;
+                  bsec_library_return_t bsec_status, float static_iaq,
+                  float co2_equivalent, float breath_voc_equivalent) {
+  // int64_t timestamp_s = timestamp / 1000000000;
   ////int64_t timestamp_ms = timestamp / 1000;
 
-  //time_t t = timestamp_s;
+  // time_t t = timestamp_s;
   /*
    * timestamp for localtime only makes sense if get_timestamp_us() uses
    * CLOCK_REALTIME
@@ -196,18 +190,18 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
 
-  printf("%d-%02d-%02d %02d:%02d:%02d,", tm.tm_year + 1900,tm.tm_mon + 1,
+  printf("%d-%02d-%02d %02d:%02d:%02d,", tm.tm_year + 1900, tm.tm_mon + 1,
          tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec); /* localtime */
   printf("[IAQ (%d)]: %.2f", iaq_accuracy, iaq);
-  printf(",[T degC]: %.2f,[H %%rH]: %.2f,[P hPa]: %.2f", temperature,
-         humidity,pressure / 100);
+  printf(",[T degC]: %.2f,[H %%rH]: %.2f,[P hPa]: %.2f", temperature, humidity,
+         pressure / 100);
   printf(",[G Ohms]: %.0f", gas);
   printf(",[S]: %d", bsec_status);
-  //printf(",[static IAQ]: %.2f", static_iaq);
+  // printf(",[static IAQ]: %.2f", static_iaq);
   printf(",[eCO2 ppm]: %.15f", co2_equivalent);
   printf(",[bVOCe ppm]: %.25f", breath_voc_equivalent);
-  //printf(",%" PRId64, timestamp);
-  //printf(",%" PRId64, timestamp_ms);
+  // printf(",%" PRId64, timestamp);
+  // printf(",%" PRId64, timestamp_ms);
   printf("\r\n");
   fflush(stdout);
 }
@@ -223,15 +217,14 @@ void output_ready(int64_t timestamp, float iaq, uint8_t iaq_accuracy,
  * return          number of bytes copied to buffer or zero on failure
  */
 uint32_t binary_load(uint8_t *b_buffer, uint32_t n_buffer, char *filename,
-                     uint32_t offset)
-{
+                     uint32_t offset) {
   int32_t copied_bytes = 0;
   int8_t rslt = 0;
 
   struct stat fileinfo;
   rslt = stat(filename, &fileinfo);
   if (rslt != 0) {
-    fprintf(stderr,"stat'ing binary file %s: ",filename);
+    fprintf(stderr, "stat'ing binary file %s: ", filename);
     perror("");
     return 0;
   }
@@ -239,20 +232,20 @@ uint32_t binary_load(uint8_t *b_buffer, uint32_t n_buffer, char *filename,
   uint32_t filesize = fileinfo.st_size - offset;
 
   if (filesize > n_buffer) {
-    fprintf(stderr,"%s: %d > %d\n", "binary data bigger than buffer", filesize,
+    fprintf(stderr, "%s: %d > %d\n", "binary data bigger than buffer", filesize,
             n_buffer);
     return 0;
   } else {
     FILE *file_ptr;
-    file_ptr = fopen(filename,"rb");
+    file_ptr = fopen(filename, "rb");
     if (!file_ptr) {
       perror("fopen");
       return 0;
     }
-    fseek(file_ptr,offset,SEEK_SET);
-    copied_bytes = fread(b_buffer,sizeof(char),filesize,file_ptr);
+    fseek(file_ptr, offset, SEEK_SET);
+    copied_bytes = fread(b_buffer, sizeof(char), filesize, file_ptr);
     if (copied_bytes == 0) {
-      fprintf(stderr,"%s empty\n",filename);
+      fprintf(stderr, "%s empty\n", filename);
     }
     fclose(file_ptr);
     return copied_bytes;
@@ -267,8 +260,7 @@ uint32_t binary_load(uint8_t *b_buffer, uint32_t n_buffer, char *filename,
  *
  * return          number of bytes copied to state_buffer or zero on failure
  */
-uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
-{
+uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer) {
   int32_t rslt = 0;
   rslt = binary_load(state_buffer, n_buffer, getenv("BSEC_STATE"), 0);
   return rslt;
@@ -282,11 +274,10 @@ uint32_t state_load(uint8_t *state_buffer, uint32_t n_buffer)
  *
  * return          none
  */
-void state_save(const uint8_t *state_buffer, uint32_t length)
-{
+void state_save(const uint8_t *state_buffer, uint32_t length) {
   FILE *state_w_ptr;
-  state_w_ptr = fopen(getenv("BSEC_STATE"),"wb");
-  fwrite(state_buffer,length,1,state_w_ptr);
+  state_w_ptr = fopen(getenv("BSEC_STATE"), "wb");
+  fwrite(state_buffer, length, 1, state_w_ptr);
   fclose(state_w_ptr);
 }
 
@@ -298,8 +289,7 @@ void state_save(const uint8_t *state_buffer, uint32_t length)
  *
  * return          number of bytes copied to config_buffer or zero on failure
  */
-uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
-{
+uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer) {
   int32_t rslt = 0;
   /*
    * Provided config file is 4 bytes larger than buffer.
@@ -318,8 +308,7 @@ uint32_t config_load(uint8_t *config_buffer, uint32_t n_buffer)
  *
  * return      result of the processing
  */
-int main()
-{
+int main(int argc, const char **argv) {
   putenv(DESTZONE); // Switch to destination time zone
 
   i2cOpen();
@@ -337,6 +326,32 @@ int main()
     return (int)ret.bsec_status;
   }
 
+  struct MHD_Daemon *daemon =
+      promhttp_start_daemon(MHD_USE_SELECT_INTERNALLY, 8000, NULL, NULL);
+  if (daemon == NULL) {
+    return 1;
+  }
+
+  int done = 0;
+
+  auto void intHandler(int signal);
+  void intHandler(int signal) {
+    printf("\nshutting down...\n");
+    fflush(stdout);
+    prom_collector_registry_destroy(PROM_COLLECTOR_REGISTRY_DEFAULT);
+    MHD_stop_daemon(daemon);
+    done = 1;
+  }
+
+  if (argc == 2) {
+    unsigned int timeout = atoi(argv[1]);
+    sleep(timeout);
+    intHandler(0);
+    return 0;
+  }
+
+  signal(SIGINT, intHandler);
+
   /* Call to endless loop function which reads and processes data based on
    * sensor settings.
    * State is saved every 10.000 samples, which means every 10.000 * 3 secs
@@ -348,4 +363,3 @@ int main()
   i2cClose();
   return 0;
 }
-

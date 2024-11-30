@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - -Ilib
+    - -Isrc/BSEC_1.4.8.0_Generic_Release_updated_v3/examples/bsec_iot_example
