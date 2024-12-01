@@ -21,9 +21,7 @@ data_types = [
 
 class PrometheusExporter:
     def __init__(self):
-        self.command = os.environ.get(
-            "BSEC_BME680_CMD", "/usr/src/app/bsec_bme680_linux/bsec_bme680"
-        )
+        self.command = os.environ.get("BSEC_BME680_CMD", "bsec_bme680")
         self.port = int(os.environ.get("PORT", "4242"))
 
         gauge = Gauge("bme680_metrics", "bme680_metrics", ["type"])
