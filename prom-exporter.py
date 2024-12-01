@@ -60,7 +60,7 @@ class PrometheusExporter:
             values.pop(0)
 
             for type, value in zip(data_types, values):
-                gauge.labels(type=type).set(value)
+                self.gauge.labels(type=type).set(value)
 
         rc = process.poll()
         time.sleep(2)
