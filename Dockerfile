@@ -2,7 +2,7 @@ FROM balenalib/raspberrypi3-python:3.8-build
 
 WORKDIR /usr/bin/app
 
-COPY prom_exporter.py prom_exporter.py
+COPY prom-exporter.py prom-exporter.py
 COPY src src
 COPY patches patches
 COPY bsec_bme680.c bsec_bme680.c
@@ -15,4 +15,4 @@ RUN pip install prometheus_client
 
 RUN ./make.sh
 
-ENTRYPOINT [ "python", "/usr/bin/app/prom_exporter.py" ]
+ENTRYPOINT [ "python", "/usr/bin/app/prom-exporter.py" ]
