@@ -31,8 +31,8 @@ class PrometheusExporter:
 
         gauge = Gauge("bme680_metrics", "bme680_metrics", ["type"])
 
-        print(f"Initialized with command: {self.command}")
-        print(f"Initialized with port: {self.port}")
+        print(f"Initialized with bsec_bme680 location: {self.command}")
+        print(f"Initialized with prom server port: {self.port}")
 
     def start():
         print(f"Starting server at port {self.port}")
@@ -68,4 +68,5 @@ class PrometheusExporter:
         return rc
 
 
-PrometheusExporter().start()
+prometheus_exporter = PrometheusExporter()
+prometheus_exporter.start()
