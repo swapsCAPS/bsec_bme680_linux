@@ -34,7 +34,7 @@ class PrometheusExporter:
         print(f"Initialized with bsec_bme680 location: {self.command}")
         print(f"Initialized with prom server port: {self.port}")
 
-    def start():
+    def start(self):
         print(f"Starting server at port {self.port}")
         start_http_server(self.port)
 
