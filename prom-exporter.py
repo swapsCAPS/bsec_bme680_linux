@@ -21,7 +21,7 @@ data_types = [
 
 class PrometheusExporter:
     def __init__(self):
-        self.command = os.environ.get("BSEC_BME680_CMD", "bsec_bme680")
+        self.command = os.environ.get("BSEC_BME680_CMD", "./bsec_bme680")
         self.port = int(os.environ.get("PORT", "4242"))
 
         gauge = Gauge("bme680_metrics", "bme680_metrics", ["type"])
@@ -53,7 +53,7 @@ class PrometheusExporter:
         for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
             data = line.strip()
             print(data)
-            if not data.startswith("__data"):
+            if not data.startswith("_data"):
                 continue
 
             data.split(",")

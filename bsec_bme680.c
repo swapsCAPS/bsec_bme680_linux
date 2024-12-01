@@ -302,6 +302,10 @@ int main(int argc, const char **argv) {
 
   float temp_offset = strtof(getenv("TEMP_OFFSET"), NULL);
 
+  printf("Running bsec_bme680 with: %s, %s, %.2f\r\n", filename_state,
+         filename_config, temp_offset);
+  fflush(stdout);
+
   i2cOpen();
   i2cSetAddress(i2c_address);
 
