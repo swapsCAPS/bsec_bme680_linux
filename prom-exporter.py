@@ -26,15 +26,16 @@ class PrometheusExporter:
         )
         self.port = int(os.environ.get("PORT", "4242"))
 
-        self.capture_thread = threading.Thread(target=self.capturewrap)
-        self.capture_thread.start()
-
         gauge = Gauge("bme680_metrics", "bme680_metrics", ["type"])
 
         print(f"Initialized with bsec_bme680 location: {self.command}")
         print(f"Initialized with prom server port: {self.port}")
 
     def start(self):
+        print("Starting capture thread")
+        self.capture_thread = threading.Thread(target=self.capturewrap)
+        self.capture_thread.start()
+
         print(f"Starting server at port {self.port}")
         start_http_server(self.port)
 
@@ -49,7 +50,6 @@ class PrometheusExporter:
             time.sleep(5)
 
     def capture(self):
-        # Start the process and commence capture and parsing of the output
         process = subprocess.Popen([self.command], stdout=subprocess.PIPE)
 
         for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
@@ -57,6 +57,7 @@ class PrometheusExporter:
             print(data)
             if not data.startswith("__data"):
                 continue
+
             data.split(",")
             data.pop(0)
 
@@ -68,5 +69,4 @@ class PrometheusExporter:
         return rc
 
 
-prometheus_exporter = PrometheusExporter()
-prometheus_exporter.start()
+PrometheusExporter().start()
