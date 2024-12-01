@@ -18,6 +18,8 @@ data_types = [
     "breath_voc_equivalent",
 ]
 
+DATA_PREFIX = "_data:"
+
 
 class PrometheusExporter:
     def __init__(self):
@@ -51,13 +53,13 @@ class PrometheusExporter:
         process = subprocess.Popen([self.command], stdout=subprocess.PIPE)
 
         for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
-            data = line.strip()
-            print(data)
-            if not data.startswith("_data"):
+            string = line.strip()
+            print(string)
+            if not string.startswith(DATA_PREFIX):
                 continue
 
+            data = string[DATA_PREFIX:]
             values = data.split(",")
-            values.pop(0)
 
             for type, value in zip(data_types, values):
                 self.gauge.labels(type=type).set(value)
