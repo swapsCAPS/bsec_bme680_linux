@@ -2,6 +2,7 @@ import subprocess
 import threading
 import io
 import time
+import os
 from prometheus_client import Gauge, start_http_server
 
 data_types = [
@@ -53,8 +54,8 @@ class PrometheusExporter:
 
         for line in io.TextIOWrapper(process.stdout, encoding="utf-8"):
             data = line.strip()
+            print(data)
             if not data.startswith("__data"):
-                print(f"bsec_bme680 reported: {data}")
                 continue
             data.split(",")
             data.pop(0)
