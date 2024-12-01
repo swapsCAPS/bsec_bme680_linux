@@ -24,7 +24,7 @@ class PrometheusExporter:
         self.command = os.environ.get("BSEC_BME680_CMD", "./bsec_bme680")
         self.port = int(os.environ.get("PORT", "4242"))
 
-        gauge = Gauge("bme680_metrics", "bme680_metrics", ["type"])
+        self.gauge = Gauge("bme680_metrics", "bme680_metrics", ["type"])
 
         print(f"Initialized with bsec_bme680 location: {self.command}")
         print(f"Initialized with prom server port: {self.port}")
