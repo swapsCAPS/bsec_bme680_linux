@@ -19,6 +19,7 @@ data_types = [
 ]
 
 DATA_PREFIX = "_data:"
+DATA_PREFIX_LEN = len(DATA_PREFIX)
 
 
 class PrometheusExporter:
@@ -58,7 +59,7 @@ class PrometheusExporter:
             if not string.startswith(DATA_PREFIX):
                 continue
 
-            data = string[DATA_PREFIX:]
+            data = string[DATA_PREFIX_LEN:]
             values = data.split(",")
 
             for type, value in zip(data_types, values):
