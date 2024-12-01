@@ -56,10 +56,10 @@ class PrometheusExporter:
             if not data.startswith("_data"):
                 continue
 
-            data.split(",")
-            data.pop(0)
+            values = data.split(",")
+            values.pop(0)
 
-            for type, value in zip(data_types, data):
+            for type, value in zip(data_types, values):
                 gauge.labels(type=type).set(value)
 
         rc = process.poll()
