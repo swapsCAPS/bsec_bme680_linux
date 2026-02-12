@@ -1,18 +1,22 @@
-FROM balenalib/raspberrypi3-python:3.8-build
+FROM balenalib/raspberrypi3-python:3.8-build AS build
 
 WORKDIR /usr/bin/app
 
-COPY prom-exporter.py prom-exporter.py
-COPY src src
 COPY patches patches
 COPY bsec_bme680.c bsec_bme680.c
 COPY make.config make.config
 COPY make.sh make.sh
 
-RUN apt update && apt install -y libgmp3-dev
+RUN ./make.sh
 
+FROM balenalib/raspberrypi3-python:3.8
+
+WORKDIR /usr/bin/app
+
+RUN apt update && apt install -y libgmp3-dev
 RUN pip install prometheus_client
 
-RUN ./make.sh
+COPY --from=build bsec_bme680 .
+COPY prom-exporter.py .
 
 ENTRYPOINT [ "python", "/usr/bin/app/prom-exporter.py" ]
