@@ -18,7 +18,7 @@ WORKDIR /usr/bin/app
 
 RUN pip install prometheus_client
 
-COPY --from=build bsec_bme680 .
+COPY --from=build /usr/bin/app/bsec_bme680 .
 COPY prom-exporter.py .
 
 ENTRYPOINT [ "python", "/usr/bin/app/prom-exporter.py" ]
